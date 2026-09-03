@@ -73,7 +73,9 @@ public final class ChillZoneVanish implements ModInitializer {
             return user != null &&
                 user.getCachedData().getPermissionData().checkPermission(PERMISSION).asBoolean();
         } catch (IllegalStateException ignored) {
-            return player.hasPermissions(4);
+            // LuckPerms is a required dependency for this mod.
+            // If it is unavailable for any reason, fail closed instead of exposing /vanish.
+            return false;
         }
     }
 

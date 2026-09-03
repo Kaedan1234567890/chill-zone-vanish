@@ -30,3 +30,6 @@ This is an alpha. Test with a second Java account/friend before relying on it.
 
 ## Fix 2
 Minecraft 26.2 is unobfuscated, so this project intentionally does not declare Mojang/Yarn mappings. GitHub Actions uses Gradle 9.5.1, matching Fabric's 26.2 guidance.
+
+## Fix 4
+Removed the obsolete ServerPlayer.hasPermissions(int) fallback. Vanish now fails closed if LuckPerms is unavailable.
