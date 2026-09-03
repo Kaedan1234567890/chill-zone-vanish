@@ -1,6 +1,7 @@
 package com.chillzone.vanish;
 
 import com.mojang.brigadier.Command;
+import com.mojang.datafixers.util.Pair;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -14,10 +15,15 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.network.protocol.game.ClientboundTrackedWaypointPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -111,8 +117,13 @@ public final class ChillZoneVanish implements ModInitializer {
     }
 
     private static void hideFrom(ServerPlayer hidden, ServerPlayer viewer) {
+        // Remove the player from TAB and from the world on the viewer's client.
         viewer.connection.send(new ClientboundPlayerInfoRemovePacket(List.of(hidden.getUUID())));
         viewer.connection.send(new ClientboundRemoveEntitiesPacket(hidden.getId()));
+
+        // Minecraft's locator bar is a separate waypoint system. Removing the player
+        // entity alone does not remove its locator dot, so explicitly untrack it too.
+        viewer.connection.send(ClientboundTrackedWaypointPacket.removeWaypoint(hidden.getUUID()));
     }
 
     private static void showTo(ServerPlayer shown, ServerPlayer viewer) {
@@ -127,6 +138,20 @@ public final class ChillZoneVanish implements ModInitializer {
             shown.getDeltaMovement(),
             shown.getYHeadRot()
         ));
+
+        // Re-send equipped items immediately after re-spawning the player entity.
+        // This fixes clients (especially Bedrock through Geyser/ViaVersion) sometimes
+        // knowing the armour is equipped while not rendering it until the next hit/update.
+        List<Pair<EquipmentSlot, ItemStack>> equipment = new ArrayList<>();
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            ItemStack stack = shown.getItemBySlot(slot);
+            if (!stack.isEmpty()) {
+                equipment.add(Pair.of(slot, stack.copy()));
+            }
+        }
+        if (!equipment.isEmpty()) {
+            viewer.connection.send(new ClientboundSetEquipmentPacket(shown.getId(), equipment));
+        }
     }
 
     private static void broadcastFake(MinecraftServer server, ServerPlayer player, boolean joined) {
