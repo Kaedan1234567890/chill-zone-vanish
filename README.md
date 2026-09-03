@@ -33,3 +33,6 @@ Minecraft 26.2 is unobfuscated, so this project intentionally does not declare M
 
 ## Fix 4
 Removed the obsolete ServerPlayer.hasPermissions(int) fallback. Vanish now fails closed if LuckPerms is unavailable.
+
+## Fix 5
+Minecraft 26.2 moved registered entity constants from EntityType to EntityTypes. The unvanish spawn packet now uses EntityTypes.PLAYER.
