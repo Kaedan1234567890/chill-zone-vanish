@@ -36,3 +36,10 @@ Removed the obsolete ServerPlayer.hasPermissions(int) fallback. Vanish now fails
 
 ## Fix 5
 Minecraft 26.2 moved registered entity constants from EntityType to EntityTypes. The unvanish spawn packet now uses EntityTypes.PLAYER.
+
+
+## Fix 7
+- Stops repeatedly sending entity-removal packets every second.
+- Re-hides a vanished player when a viewer enters tracking range.
+- Detects large position jumps such as staff teleport and re-hides once after the jump.
+- Keeps existing TAB hiding, locator-bar hiding, fake join/leave messages, LuckPerms permission, and equipment resync behavior.

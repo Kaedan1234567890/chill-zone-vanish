@@ -28,11 +28,24 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
 public final class ChillZoneVanish implements ModInitializer {
     public static final String PERMISSION = "chillzonevanish.command.vanish";
     private static final Set<UUID> VANISHED = ConcurrentHashMap.newKeySet();
     private static int ticks = 0;
+
+    // Tracks whether a viewer was recently close enough for Minecraft to begin
+    // tracking a vanished player. This lets us re-hide only when tracking is
+    // likely to start instead of spamming remove packets every second.
+    private static final Map<ViewerKey, Boolean> NEARBY = new ConcurrentHashMap<>();
+
+    // Last sampled position for vanished players. A large jump is treated as a
+    // teleport and causes one fresh hide packet to nearby viewers.
+    private static final Map<UUID, Position> LAST_POSITION = new ConcurrentHashMap<>();
+
+    private static final double TRACKING_RADIUS_SQ = 192.0 * 192.0;
+    private static final double TELEPORT_DISTANCE_SQ = 32.0 * 32.0;
 
     @Override
     public void onInitialize() {
@@ -55,18 +68,41 @@ public final class ChillZoneVanish implements ModInitializer {
             })
         );
 
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
-            VANISHED.remove(handler.getPlayer().getUUID())
-        );
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            UUID id = handler.getPlayer().getUUID();
+            VANISHED.remove(id);
+            LAST_POSITION.remove(id);
+            NEARBY.keySet().removeIf(key -> key.hidden().equals(id) || key.viewer().equals(id));
+        });
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            if (++ticks < 20) return;
+            if (++ticks < 10) return;
             ticks = 0;
+
             for (UUID id : VANISHED) {
                 ServerPlayer hidden = server.getPlayerList().getPlayer(id);
                 if (hidden == null) continue;
+
+                Position now = new Position(hidden.getX(), hidden.getY(), hidden.getZ());
+                Position before = LAST_POSITION.put(id, now);
+                boolean teleported = before != null && before.distanceSquared(now) >= TELEPORT_DISTANCE_SQ;
+
                 for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
-                    if (viewer != hidden) hideFrom(hidden, viewer);
+                    if (viewer == hidden) continue;
+
+                    ViewerKey key = new ViewerKey(id, viewer.getUUID());
+                    boolean near = hidden.distanceToSqr(viewer) <= TRACKING_RADIUS_SQ;
+                    boolean wasNear = NEARBY.getOrDefault(key, false);
+
+                    // Re-hide once when a viewer enters tracking range or when the
+                    // vanished player makes a large jump (for example /tpto).
+                    // This avoids the old every-second packet spam that could
+                    // disconnect clients after teleporting directly beside them.
+                    if (near && (!wasNear || teleported)) {
+                        hideFrom(hidden, viewer);
+                    }
+
+                    NEARBY.put(key, near);
                 }
             }
         });
@@ -92,11 +128,16 @@ public final class ChillZoneVanish implements ModInitializer {
 
     private static void vanish(ServerPlayer player) {
         VANISHED.add(player.getUUID());
+        LAST_POSITION.put(player.getUUID(), new Position(player.getX(), player.getY(), player.getZ()));
         MinecraftServer server = player.level().getServer();
         if (server == null) return;
 
         for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
-            if (viewer != player) hideFrom(player, viewer);
+            if (viewer != player) {
+                hideFrom(player, viewer);
+                NEARBY.put(new ViewerKey(player.getUUID(), viewer.getUUID()),
+                    player.distanceToSqr(viewer) <= TRACKING_RADIUS_SQ);
+            }
         }
 
         broadcastFake(server, player, false);
@@ -105,6 +146,8 @@ public final class ChillZoneVanish implements ModInitializer {
 
     private static void unvanish(ServerPlayer player) {
         VANISHED.remove(player.getUUID());
+        LAST_POSITION.remove(player.getUUID());
+        NEARBY.keySet().removeIf(key -> key.hidden().equals(player.getUUID()));
         MinecraftServer server = player.level().getServer();
         if (server == null) return;
 
@@ -151,6 +194,17 @@ public final class ChillZoneVanish implements ModInitializer {
         }
         if (!equipment.isEmpty()) {
             viewer.connection.send(new ClientboundSetEquipmentPacket(shown.getId(), equipment));
+        }
+    }
+
+    private record ViewerKey(UUID hidden, UUID viewer) {}
+
+    private record Position(double x, double y, double z) {
+        double distanceSquared(Position other) {
+            double dx = x - other.x;
+            double dy = y - other.y;
+            double dz = z - other.z;
+            return dx * dx + dy * dy + dz * dz;
         }
     }
 
