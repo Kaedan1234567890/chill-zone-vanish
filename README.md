@@ -43,3 +43,8 @@ Minecraft 26.2 moved registered entity constants from EntityType to EntityTypes.
 - Re-hides a vanished player when a viewer enters tracking range.
 - Detects large position jumps such as staff teleport and re-hides once after the jump.
 - Keeps existing TAB hiding, locator-bar hiding, fake join/leave messages, LuckPerms permission, and equipment resync behavior.
+
+## Fix8 — Staff TP compatibility
+Adds a soft compatibility bridge for Chill Zone Staff TP. During `/tpto` or `/tphere`, Vanish delays the re-hide packet by a few ticks so the teleport packet can settle first. This prevents the teleport and vanish entity-removal packets from colliding.
+
+Pair this build with Chill Zone Staff TP 0.1.0-fix3 or newer.

@@ -3,7 +3,7 @@
   "id": "chill_zone_vanish",
   "version": "${version}",
   "name": "Chill Zone Vanish",
-  "description": "Server-side vanish command with LuckPerms-aware fake join/leave messages.",
+  "description": "Server-side vanish command with LuckPerms-aware fake join/leave messages and Staff TP compatibility.",
   "authors": ["Chill Zone SMP"],
   "environment": "server",
   "entrypoints": {

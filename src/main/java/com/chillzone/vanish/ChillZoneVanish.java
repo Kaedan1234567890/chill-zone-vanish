@@ -44,6 +44,12 @@ public final class ChillZoneVanish implements ModInitializer {
     // teleport and causes one fresh hide packet to nearby viewers.
     private static final Map<UUID, Position> LAST_POSITION = new ConcurrentHashMap<>();
 
+    // Compatibility bridge for Chill Zone Staff TP. When a vanished staff member
+    // teleports to/from another player, delaying the hide packet by a few ticks
+    // prevents the teleport and entity-removal packets from colliding on the client.
+    private static final Map<ViewerKey, Integer> DELAYED_HIDE_TICKS = new ConcurrentHashMap<>();
+    private static final int STAFF_TP_HIDE_DELAY_TICKS = 4;
+
     private static final double TRACKING_RADIUS_SQ = 192.0 * 192.0;
     private static final double TELEPORT_DISTANCE_SQ = 32.0 * 32.0;
 
@@ -73,9 +79,14 @@ public final class ChillZoneVanish implements ModInitializer {
             VANISHED.remove(id);
             LAST_POSITION.remove(id);
             NEARBY.keySet().removeIf(key -> key.hidden().equals(id) || key.viewer().equals(id));
+            DELAYED_HIDE_TICKS.keySet().removeIf(key -> key.hidden().equals(id) || key.viewer().equals(id));
         });
 
         ServerTickEvents.END_SERVER_TICK.register(server -> {
+            // Process Staff TP compatibility every tick so the delayed hide happens
+            // almost immediately after the teleport has settled.
+            processDelayedHides(server);
+
             if (++ticks < 10) return;
             ticks = 0;
 
@@ -98,7 +109,7 @@ public final class ChillZoneVanish implements ModInitializer {
                     // vanished player makes a large jump (for example /tpto).
                     // This avoids the old every-second packet spam that could
                     // disconnect clients after teleporting directly beside them.
-                    if (near && (!wasNear || teleported)) {
+                    if (near && (!wasNear || teleported) && !DELAYED_HIDE_TICKS.containsKey(key)) {
                         hideFrom(hidden, viewer);
                     }
 
@@ -106,6 +117,45 @@ public final class ChillZoneVanish implements ModInitializer {
                 }
             }
         });
+    }
+
+
+    /**
+     * Called reflectively by Chill Zone Staff TP before /tpto or /tphere.
+     * There is intentionally no hard mod dependency between the two projects.
+     */
+    public static void prepareStaffTeleport(ServerPlayer staff, ServerPlayer otherPlayer) {
+        if (staff == null || otherPlayer == null) return;
+        UUID staffId = staff.getUUID();
+        if (!VANISHED.contains(staffId)) return;
+
+        ViewerKey key = new ViewerKey(staffId, otherPlayer.getUUID());
+        DELAYED_HIDE_TICKS.put(key, STAFF_TP_HIDE_DELAY_TICKS);
+    }
+
+    private static void processDelayedHides(MinecraftServer server) {
+        if (DELAYED_HIDE_TICKS.isEmpty()) return;
+
+        for (Map.Entry<ViewerKey, Integer> entry : new ArrayList<>(DELAYED_HIDE_TICKS.entrySet())) {
+            ViewerKey key = entry.getKey();
+            int remaining = entry.getValue() - 1;
+
+            if (remaining > 0) {
+                DELAYED_HIDE_TICKS.put(key, remaining);
+                continue;
+            }
+
+            DELAYED_HIDE_TICKS.remove(key);
+
+            if (!VANISHED.contains(key.hidden())) continue;
+            ServerPlayer hidden = server.getPlayerList().getPlayer(key.hidden());
+            ServerPlayer viewer = server.getPlayerList().getPlayer(key.viewer());
+            if (hidden == null || viewer == null || hidden == viewer) continue;
+
+            hideFrom(hidden, viewer);
+            NEARBY.put(key, hidden.distanceToSqr(viewer) <= TRACKING_RADIUS_SQ);
+            LAST_POSITION.put(hidden.getUUID(), new Position(hidden.getX(), hidden.getY(), hidden.getZ()));
+        }
     }
 
     private static boolean hasPermission(ServerPlayer player) {
@@ -148,6 +198,7 @@ public final class ChillZoneVanish implements ModInitializer {
         VANISHED.remove(player.getUUID());
         LAST_POSITION.remove(player.getUUID());
         NEARBY.keySet().removeIf(key -> key.hidden().equals(player.getUUID()));
+        DELAYED_HIDE_TICKS.keySet().removeIf(key -> key.hidden().equals(player.getUUID()));
         MinecraftServer server = player.level().getServer();
         if (server == null) return;
 
