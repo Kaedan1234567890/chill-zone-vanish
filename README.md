@@ -20,8 +20,8 @@ Recommended:
 - Fake LuckPerms-prefix leave message on vanish
 - Fake LuckPerms-prefix join message on unvanish
 - Removes vanished player from TAB for other players
-- Removes vanished player entity from other clients
-- Re-applies hiding once per second
+- Keeps the player entity normally tracked and uses Minecraft invisibility instead
+- Hides armour/held items client-side without deleting the player entity
 - New players do not see already-vanished players
 - Simple Voice Chat is intentionally untouched
 
@@ -48,3 +48,15 @@ Minecraft 26.2 moved registered entity constants from EntityType to EntityTypes.
 Adds a soft compatibility bridge for Chill Zone Staff TP. During `/tpto` or `/tphere`, Vanish delays the re-hide packet by a few ticks so the teleport packet can settle first. This prevents the teleport and vanish entity-removal packets from colliding.
 
 Pair this build with Chill Zone Staff TP 0.1.0-fix3 or newer.
+
+
+## Fix9 — Safe entity tracking
+- Removes the unsafe `ClientboundRemoveEntitiesPacket` vanish behaviour.
+- Removes the manual `ClientboundAddEntityPacket` unvanish behaviour.
+- Uses Minecraft's normal `ServerPlayer#setInvisible(true/false)` metadata so the server and client agree that the player entity still exists.
+- Keeps the vanished player out of TAB.
+- Sends empty equipment only to viewers while vanished so armour/held items are not left floating.
+- Restores real equipment on unvanish.
+- Keeps the Staff TP compatibility bridge, but `/tpto` no longer needs to race against entity removal packets.
+
+This fix specifically targets clients being disconnected when `/vanish` is toggled or when a vanished staff member enters tracking range.
