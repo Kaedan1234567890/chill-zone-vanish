@@ -49,11 +49,11 @@ public final class ShardSidebar {
 
         long rawPlayTicks = player.getStats().getValue(Stats.CUSTOM.get(Stats.PLAY_TIME));
         long playTicks = ChillZoneHomes.shards().rememberPlayTime(player.getUUID(), rawPlayTicks);
-        Component timeLine = Component.literal("Time: ")
+        Component timeLine = Component.literal("Playtime: ")
             .withStyle(ChatFormatting.WHITE)
             .append(Component.literal(formatPlayTime(playTicks)).withStyle(ChatFormatting.YELLOW));
 
-        // Higher score renders above the lower score, so Time appears directly under Shards.
+        // Higher score renders above the lower score, so Playtime appears directly under Shards.
         player.connection.send(new ClientboundSetScorePacket(
             "cz_shards",
             objectiveName,

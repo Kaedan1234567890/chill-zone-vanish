@@ -80,7 +80,7 @@ Both commands do the same thing. Payments fail if the sender does not have enoug
 
 - Keeps all Fix 10 `/bal`, `/baltop`, player-name, player-head, `/pay`, Homes, and Shard features unchanged.
 - `/baltop` still shows 28 players per page, with a Next Page arrow when needed and a Previous Page arrow on page 2+.
-- Adds **Time** directly under **Shards** on each player's sidebar.
+- Adds **Playtime** directly under **Shards** on each player’s sidebar.
 - Shard value is displayed in **light purple**.
 - Play-time value is displayed in **yellow**.
 - Uses Minecraft's existing `play_time` statistic, so existing player play time is retained rather than starting over with this update.
@@ -110,3 +110,7 @@ Both commands do the same thing. Payments fail if the sender does not have enoug
   - `/playtime balance <player>`
 - Example to wipe a test player's displayed play time: `/playtime set PlayerName 0 minutes`. If that player also has 0 Shards, they disappear from `/baltop`.
 - Play-time adjustments are stored as an offset alongside the existing shard data, so the player's vanilla Minecraft statistic is not destructively rewritten. Time continues accumulating normally after an adjustment.
+
+## Fix 15 — Playtime label
+- Renames the sidebar label from **Time** to **Playtime**.
+- Keeps the yellow playtime value, purple Shard value, 5-minute Shard generation, and all other Fix 14 behaviour unchanged.
