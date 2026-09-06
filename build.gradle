@@ -12,6 +12,7 @@ base {
 
 repositories {
     mavenCentral()
+    maven { url = "https://repo.opencollab.dev/main/" }
 }
 
 dependencies {
@@ -19,6 +20,7 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     compileOnly "net.luckperms:api:5.4"
+    compileOnly "org.geysermc.floodgate:api:2.2.5-SNAPSHOT"
 }
 
 processResources {
@@ -43,6 +45,16 @@ publishing {
     publications {
         create("mavenJava", MavenPublication) {
             from components.java
+        }
+    }
+}
+
+// Safety: older repository copies accidentally contained Chill Zone Vanish sources.
+// Homes must never compile those unrelated files, even if they remain in the clone.
+sourceSets {
+    main {
+        java {
+            exclude 'com/chillzone/vanish/**'
         }
     }
 }

@@ -1,14 +1,15 @@
 {
   "schemaVersion": 1,
-  "id": "chill_zone_vanish",
+  "id": "chillzonehomes",
   "version": "${version}",
-  "name": "Chill Zone Vanish",
-  "description": "Server-side vanish command with LuckPerms-aware fake join/leave messages and Staff TP compatibility.",
+  "name": "Chill Zone Homes",
+  "description": "Chill Zone SMP homes with shard progression and purchasable home slots.",
   "authors": ["Chill Zone SMP"],
   "environment": "server",
   "entrypoints": {
-    "main": ["com.chillzone.vanish.ChillZoneVanish"]
+    "main": ["com.chillzone.homes.ChillZoneHomes"]
   },
+  "mixins": ["chillzonehomes.mixins.json"],
   "depends": {
     "fabricloader": ">=0.19.3",
     "fabric-api": "*",

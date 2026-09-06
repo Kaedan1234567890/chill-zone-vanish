@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.chillzone.homes.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "ServerGamePacketListenerImplMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
