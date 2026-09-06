@@ -232,7 +232,7 @@ public final class ChillZoneVanish implements ModInitializer {
     private static void broadcastFake(MinecraftServer server, ServerPlayer player, boolean joined) {
         Component message = Component.empty()
             .append(prefixedName(player))
-            .append(Component.literal(joined ? " joined the game" : " left the game"));
+            .append(Component.literal(joined ? " joined the game" : " left the game").withStyle(ChatFormatting.YELLOW));
         server.getPlayerList().broadcastSystemMessage(message, false);
     }
 
@@ -251,6 +251,6 @@ public final class ChillZoneVanish implements ModInitializer {
             out = out.copy().append(LegacyText.parse(prefix));
             if (!prefix.endsWith(" ")) out = out.copy().append(Component.literal(" "));
         }
-        return out.copy().append(player.getName());
+        return out.copy().append(player.getName().copy().withStyle(ChatFormatting.YELLOW));
     }
 }

@@ -60,3 +60,9 @@ Pair this build with Chill Zone Staff TP 0.1.0-fix3 or newer.
 - Keeps the Staff TP compatibility bridge, but `/tpto` no longer needs to race against entity removal packets.
 
 This fix specifically targets clients being disconnected when `/vanish` is toggled or when a vanished staff member enters tracking range.
+
+
+## Fix10 — Vanilla-style fake join/leave colour
+- Fake vanish leave and unvanish join messages now render the player name and `joined the game` / `left the game` text in yellow, matching the intended normal server join/leave appearance.
+- LuckPerms prefix formatting is preserved.
+- All Fix9 safe entity-tracking behaviour remains unchanged.
