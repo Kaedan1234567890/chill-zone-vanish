@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "chillzonehomes",
   "version": "${version}",
-  "name": "Chill Zone Homes + Vanish",
-  "description": "Chill Zone SMP homes plus server-side staff vanish.",
+  "name": "Chill Zone Vanish",
+  "description": "Server-side staff vanish for Chill Zone SMP.",
   "authors": [
     "Chill Zone SMP"
   ],
