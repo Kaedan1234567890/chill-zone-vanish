@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "chillzonehomes",
+  "id": "chillzonevanish",
   "version": "${version}",
   "name": "Chill Zone Vanish",
   "description": "Server-side staff vanish for Chill Zone SMP.",
@@ -10,13 +10,9 @@
   "environment": "server",
   "entrypoints": {
     "main": [
-      "com.chillzone.homes.ChillZoneHomes",
       "com.chillzone.vanish.ChillZoneVanish"
     ]
   },
-  "mixins": [
-    "chillzonehomes.mixins.json"
-  ],
   "depends": {
     "fabricloader": ">=0.19.3",
     "fabric-api": "*",

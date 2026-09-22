@@ -32,5 +32,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: chill-zone-homes
-          path: build/libs/*.jar
+          name: chill-zone-vanish
+          path: build/libs/chill-zone-vanish-*.jar
+          if-no-files-found: error
