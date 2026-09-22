@@ -16,7 +16,7 @@ import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 
 import java.util.List;
 import java.util.Set;
@@ -97,7 +97,8 @@ public final class ChillZoneVanish implements ModInitializer {
             return user != null &&
                 user.getCachedData().getPermissionData().checkPermission(PERMISSION).asBoolean();
         } catch (IllegalStateException ignored) {
-            return player.hasPermissions(4);
+            // Fail closed if LuckPerms is unavailable; avoids relying on removed 26.2 permission APIs.
+            return false;
         }
     }
 
@@ -153,7 +154,7 @@ public final class ChillZoneVanish implements ModInitializer {
             shown.getUUID(),
             shown.getX(), shown.getY(), shown.getZ(),
             shown.getXRot(), shown.getYRot(),
-            EntityType.PLAYER,
+            EntityTypes.PLAYER,
             0,
             shown.getDeltaMovement(),
             shown.getYHeadRot()

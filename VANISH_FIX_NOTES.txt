@@ -1,11 +1,13 @@
-Vanish TAB lock fix
-- Restored vanish package to compilation and registered its Fabric entrypoint.
-- Hidden state reasserts TAB/entity removal every server tick.
-- Added a 10-tick delayed reveal. Rapid vanish -> unvanish -> vanish cancels the reveal before any player-info/entity add packet is sent, preventing the known rapid-toggle TAB flash.
-- Disconnect clears vanish/pending state.
-- Existing permission: chillzonevanish.command.vanish
+Vanish TAB Lock FIX1 - Minecraft 26.2
 
-Scope honesty:
-- This specifically hardens the in-game TAB/entity behavior in the supplied source.
-- Server-list hover/sample hiding is a separate status-response path and is not claimed here.
-- Exact Minecraft 26.2 compilation still needs the project's GitHub Actions build because this environment cannot download Gradle dependencies.
+Build-error fixes from GitHub Actions:
+- Removed ServerPlayer.hasPermissions(int): that method is not present in the 26.2 mappings used by this project. LuckPerms remains the authority; fallback now fails closed.
+- Replaced EntityType.PLAYER with EntityTypes.PLAYER, matching Minecraft 26.2's moved entity constants.
+
+Preventive 26.2 review:
+- ClientboundPlayerInfoUpdatePacket.createPlayerInitializing(Collection<ServerPlayer>) remains valid.
+- ClientboundAddEntityPacket's explicit constructor remains available in 26.2.
+- Player type constants are on EntityTypes in 26.2.
+- Existing vanish state keeps VANISHED active during the delayed reveal and cancels pending reveal on rapid re-vanish.
+
+No unrelated Homes behavior was changed.
