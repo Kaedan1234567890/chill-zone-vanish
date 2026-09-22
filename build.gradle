@@ -49,12 +49,3 @@ publishing {
     }
 }
 
-// Safety: older repository copies accidentally contained Chill Zone Vanish sources.
-// Homes must never compile those unrelated files, even if they remain in the clone.
-sourceSets {
-    main {
-        java {
-            exclude 'com/chillzone/vanish/**'
-        }
-    }
-}

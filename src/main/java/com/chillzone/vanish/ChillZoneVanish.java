@@ -26,7 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ChillZoneVanish implements ModInitializer {
     public static final String PERMISSION = "chillzonevanish.command.vanish";
     private static final Set<UUID> VANISHED = ConcurrentHashMap.newKeySet();
-    private static int ticks = 0;
+    // Unvanish is deliberately delayed for a few ticks. If /vanish is toggled
+    // rapidly, the pending reveal is cancelled before any ADD_PLAYER/entity
+    // packet is sent, preventing a one-frame TAB flash.
+    private static final ConcurrentHashMap<UUID, Integer> PENDING_REVEAL = new ConcurrentHashMap<>();
+    private static final int REVEAL_DELAY_TICKS = 10;
 
     @Override
     public void onInitialize() {
@@ -49,19 +53,39 @@ public final class ChillZoneVanish implements ModInitializer {
             })
         );
 
-        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
-            VANISHED.remove(handler.getPlayer().getUUID())
-        );
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+            UUID id = handler.getPlayer().getUUID();
+            VANISHED.remove(id);
+            PENDING_REVEAL.remove(id);
+        });
 
+        // Re-assert vanish every server tick. This closes the brief TAB/entity
+        // reappearance window caused by other mods or player-info refreshes.
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            if (++ticks < 20) return;
-            ticks = 0;
+            // Hidden wins over every refresh: remove TAB + tracked entity every tick.
             for (UUID id : VANISHED) {
                 ServerPlayer hidden = server.getPlayerList().getPlayer(id);
                 if (hidden == null) continue;
                 for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
                     if (viewer != hidden) hideFrom(hidden, viewer);
                 }
+            }
+
+            // Reveal only after the state has remained stable for the full delay.
+            // A rapid second /vanish cancels this before showTo() can run.
+            PENDING_REVEAL.replaceAll((id, ticks) -> ticks - 1);
+            for (var entry : PENDING_REVEAL.entrySet()) {
+                if (entry.getValue() > 0) continue;
+                UUID id = entry.getKey();
+                if (!PENDING_REVEAL.remove(id, entry.getValue())) continue;
+                if (!VANISHED.remove(id)) continue;
+                ServerPlayer shown = server.getPlayerList().getPlayer(id);
+                if (shown == null) continue;
+                for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
+                    if (viewer != shown) showTo(shown, viewer);
+                }
+                broadcastFake(server, shown, true);
+                shown.sendSystemMessage(Component.literal("You are now visible."));
             }
         });
     }
@@ -78,11 +102,26 @@ public final class ChillZoneVanish implements ModInitializer {
     }
 
     private static void toggle(ServerPlayer player) {
-        if (VANISHED.contains(player.getUUID())) unvanish(player);
-        else vanish(player);
+        UUID id = player.getUUID();
+        if (PENDING_REVEAL.remove(id) != null) {
+            // Rapid vanish -> unvanish -> vanish: never reveal in between.
+            VANISHED.add(id);
+            MinecraftServer server = player.level().getServer();
+            if (server != null) {
+                for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
+                    if (viewer != player) hideFrom(player, viewer);
+                }
+            }
+            player.sendSystemMessage(Component.literal("Reveal cancelled. You remain vanished."));
+        } else if (VANISHED.contains(id)) {
+            unvanish(player);
+        } else {
+            vanish(player);
+        }
     }
 
     private static void vanish(ServerPlayer player) {
+        PENDING_REVEAL.remove(player.getUUID());
         VANISHED.add(player.getUUID());
         MinecraftServer server = player.level().getServer();
         if (server == null) return;
@@ -96,16 +135,10 @@ public final class ChillZoneVanish implements ModInitializer {
     }
 
     private static void unvanish(ServerPlayer player) {
-        VANISHED.remove(player.getUUID());
-        MinecraftServer server = player.level().getServer();
-        if (server == null) return;
-
-        for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
-            if (viewer != player) showTo(player, viewer);
-        }
-
-        broadcastFake(server, player, true);
-        player.sendSystemMessage(Component.literal("You are now visible."));
+        // Keep VANISHED set until the delayed reveal actually fires. This is the
+        // key to preventing TAB/entity flashes during rapid toggling.
+        PENDING_REVEAL.put(player.getUUID(), REVEAL_DELAY_TICKS);
+        player.sendSystemMessage(Component.literal("Unvanishing..."));
     }
 
     private static void hideFrom(ServerPlayer hidden, ServerPlayer viewer) {

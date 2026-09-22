@@ -1,0 +1,11 @@
+Vanish TAB lock fix
+- Restored vanish package to compilation and registered its Fabric entrypoint.
+- Hidden state reasserts TAB/entity removal every server tick.
+- Added a 10-tick delayed reveal. Rapid vanish -> unvanish -> vanish cancels the reveal before any player-info/entity add packet is sent, preventing the known rapid-toggle TAB flash.
+- Disconnect clears vanish/pending state.
+- Existing permission: chillzonevanish.command.vanish
+
+Scope honesty:
+- This specifically hardens the in-game TAB/entity behavior in the supplied source.
+- Server-list hover/sample hiding is a separate status-response path and is not claimed here.
+- Exact Minecraft 26.2 compilation still needs the project's GitHub Actions build because this environment cannot download Gradle dependencies.
