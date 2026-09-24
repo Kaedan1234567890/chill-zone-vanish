@@ -272,7 +272,11 @@ public final class ChillZoneVanish implements ModInitializer {
     }
 
     private static void broadcastFake(MinecraftServer server, ServerPlayer player, boolean joined) {
+        // Match Minecraft's normal join/leave message colour. The yellow style is
+        // applied at the parent level so uncoloured name/text segments inherit it,
+        // while any explicit LuckPerms prefix colours are preserved.
         Component message = Component.empty()
+            .withStyle(ChatFormatting.YELLOW)
             .append(prefixedName(player))
             .append(Component.literal(joined ? " joined the game" : " left the game"));
         server.getPlayerList().broadcastSystemMessage(message, false);

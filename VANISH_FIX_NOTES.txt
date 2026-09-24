@@ -18,3 +18,9 @@ Visible TAB Count FIX - 0.1.1
 - Preserves the existing TAB header/footer design and max-player value.
 - Refreshes immediately on vanish/unvanish and after disconnect.
 - Does not change the multiplayer server-list/MOTD online count.
+
+
+Join/Leave Colour FIX - 0.1.2
+- Restores the vanilla-style yellow colour for fake vanish/unvanish join/leave messages.
+- Preserves explicit LuckPerms prefix colours.
+- Leaves the visible TAB player-count fix unchanged.
