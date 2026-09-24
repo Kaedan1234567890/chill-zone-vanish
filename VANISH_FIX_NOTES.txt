@@ -11,3 +11,10 @@ Preventive 26.2 review:
 - Existing vanish state keeps VANISHED active during the delayed reveal and cancels pending reveal on rapid re-vanish.
 
 No unrelated Homes behavior was changed.
+
+
+Visible TAB Count FIX - 0.1.1
+- Intercepts outgoing ClientboundTabListPacket packets and replaces only the online number in `Players: X/Y` with the non-vanished player count.
+- Preserves the existing TAB header/footer design and max-player value.
+- Refreshes immediately on vanish/unvanish and after disconnect.
+- Does not change the multiplayer server-list/MOTD online count.
