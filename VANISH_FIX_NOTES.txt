@@ -24,3 +24,5 @@ Join/Leave Colour FIX - 0.1.2
 - Restores the vanilla-style yellow colour for fake vanish/unvanish join/leave messages.
 - Preserves explicit LuckPerms prefix colours.
 - Leaves the visible TAB player-count fix unchanged.
+
+0.1.3 fix: Added missing net.minecraft.ChatFormatting import required by the yellow fake join/leave message styling. No gameplay/vanish timing/TAB-count behavior changed.
