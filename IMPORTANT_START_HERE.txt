@@ -1,0 +1,1 @@
+VANISH ONLY Minecraft 26.3 source. This archive has no Homes Java source, no SignInputManager.java. GitHub build must use only these files in your vanish repository; do not merge with old Homes files. Entire repository needs clearing before uploading. This source port is NOT verified to compile or work in Minecraft. Do not change join/leave messages yet.

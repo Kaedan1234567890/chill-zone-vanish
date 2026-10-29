@@ -272,32 +272,22 @@ public final class ChillZoneVanish implements ModInitializer {
         ));
     }
 
+    /**
+     * Chill Zone's custom join/leave appearance, based on the supplied in-game
+     * screenshot: aqua +/- and player name, gray "joined/left the server".
+     * Use the display name (not a hard-coded LuckPerms prefix) so the server's
+     * existing name formatting can pass through when supported.
+     */
     private static void broadcastFake(MinecraftServer server, ServerPlayer player, boolean joined) {
-        // Match Minecraft's normal join/leave message colour. The yellow style is
-        // applied at the parent level so uncoloured name/text segments inherit it,
-        // while any explicit LuckPerms prefix colours are preserved.
-        Component message = Component.empty()
-            .withStyle(ChatFormatting.YELLOW)
-            .append(prefixedName(player))
-            .append(Component.literal(joined ? " joined the game" : " left the game"));
-        server.getPlayerList().broadcastSystemMessage(message, false);
-    }
+        MutableComponent message = Component.empty()
+            .append(Component.literal(joined ? "+ " : "- ").withStyle(ChatFormatting.AQUA))
+            .append(player.getDisplayName().copy().withStyle(ChatFormatting.AQUA))
+            .append(Component.literal(joined ? " joined the server" : " left the server")
+                .withStyle(ChatFormatting.GRAY));
 
-    private static Component prefixedName(ServerPlayer player) {
-        String prefix = "";
-        try {
-            LuckPerms lp = LuckPermsProvider.get();
-            User user = lp.getUserManager().getUser(player.getUUID());
-            if (user != null && user.getCachedData().getMetaData().getPrefix() != null) {
-                prefix = user.getCachedData().getMetaData().getPrefix();
-            }
-        } catch (IllegalStateException ignored) {}
-
-        Component out = Component.empty();
-        if (!prefix.isBlank()) {
-            out = out.copy().append(LegacyText.parse(prefix));
-            if (!prefix.endsWith(" ")) out = out.copy().append(Component.literal(" "));
+        // The vanished player should not receive their own fake disconnect/reconnect.
+        for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
+            if (viewer != player) viewer.sendSystemMessage(message);
         }
-        return out.copy().append(player.getName());
     }
 }
